@@ -1,11 +1,12 @@
 package authentication
 
 import (
-	// "encoding/base64"
-	// "log"
-	// "strings"
+	"encoding/base64"
 	"testing"
 )
+
+var foobar, foobogus = base64.StdEncoding.EncodeToString([]byte("foo:bar")),
+	base64.StdEncoding.EncodeToString([]byte("foo:bogus"))
 
 func TestShouldFailIfAuthHeaderEmpty(t *testing.T) {
 	if ok, _ := BasicAuthPassed(""); ok {
@@ -26,13 +27,13 @@ func TestShouldFailIfNonDecodable(t *testing.T) {
 }
 
 func TestShouldFailWithIncorrectPassword(t *testing.T) {
-	if ok, _ := BasicAuthPassed("Basic Zm9vOmJhcnM="); ok {
+	if ok, _ := BasicAuthPassed("Basic " + foobogus); ok {
 		t.Error("BasicAuthPassed() should be false with incorrect password")
 	}
 }
 
 func TestShouldPass(t *testing.T) {
-	if ok, _ := BasicAuthPassed("Basic Zm9vOmJhcg=="); !ok {
+	if ok, _ := BasicAuthPassed("Basic " + foobar); !ok {
 		t.Error("BasicAuthPassed() should be true with correct password")
 	}
 }
