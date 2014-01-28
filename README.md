@@ -1,6 +1,8 @@
 Elasticguardian
 ===============
 
+[![Build Status](https://travis-ci.org/alexaandru/elastic_guardian.png?branch=master)](https://travis-ci.org/alexaandru/elastic_guardian)
+
 **Elasticsearch Guardian** - a tiny reverse proxy that can offer authentication (using HTTP Basic Auth) as well as authorization.
 
 TODO
