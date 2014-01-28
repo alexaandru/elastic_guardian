@@ -5,9 +5,9 @@ Elastic Guardian
 
 **Elastic Guardian** is a tiny reverse proxy that can offer authentication (using HTTP Basic Auth) as well as authorization.
 
-While it was originally meant as a thin layer between **Elasticsearch** (which has no builin authentication/authorization) and the World,
-there is nothing in it specific to **Elasticsearch**. The generic use case for **Elastic Guardian** is a HTTP API that you want to restrict
-access to with HTTP Basic Auth and authorization rules.
+While it was originally meant as a thin layer between **Elasticsearch** (which has no builtin authentication/authorization) and the World,
+there is nothing specific to **Elasticsearch**. The generic use case for **Elastic Guardian** is to restrict
+access to a HTTP API with HTTP Basic Auth and authorization rules.
 
 TODO
 ----
