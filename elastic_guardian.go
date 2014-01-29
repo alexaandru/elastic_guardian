@@ -20,11 +20,11 @@ const FrontendURL = ":9600"
 func wrapAuthentication(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if ok, user := aa.BasicAuthPassed(r.Header.Get("Authorization")); ok {
-			log.Println("Authentication passed, user is", user)
+			go log.Println("Authentication passed, user is", user)
 			r.Header.Set("X-Authenticated-User", user)
 			h.ServeHTTP(w, r)
 		} else {
-			log.Println("Authentication failed")
+			go log.Println("Authentication failed")
 			http.Error(w, "401 Forbidden (authentication)", http.StatusForbidden)
 		}
 	})
@@ -34,10 +34,10 @@ func wrapAuthentication(h http.Handler) http.Handler {
 func wrapAuthorization(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if az.AuthorizationPassed(r.Header.Get("X-Authenticated-User"), r.Method, r.URL.Path) {
-			log.Println("Authorization passed")
+			go log.Println("Authorization passed")
 			h.ServeHTTP(w, r)
 		} else {
-			log.Println("Authorization failed")
+			go log.Println("Authorization failed")
 			http.Error(w, "401 Forbidden (authorization)", http.StatusForbidden)
 		}
 	})

@@ -6,3 +6,6 @@ for i in "authentication/*.go" "authorization/*.go"; do
         exit 1
     fi
 done
+
+# cleanup
+rm -f auth*/*.test

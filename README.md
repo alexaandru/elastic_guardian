@@ -13,7 +13,6 @@ TODO
 ----
 
  1. add functional tests (via net/http/httptest);
- 1. logging must be async;
  1. implement swappable backends for auth*;
  1. implement two proof of concept auth backends: go/struct (current) and file based (htpasswd like);
  1. encrypt credentials at rest;
