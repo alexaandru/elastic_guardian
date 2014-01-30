@@ -38,14 +38,14 @@ var Realm string
 func wrapAuthentication(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		status, user := aa.BasicAuthPassed(r.Header.Get("Authorization"))
-		if status == aa.NotAttempted {
-			go log.Println("Authentication not attempted, requesting it")
-			w.Header().Set("WWW-Authenticate", "Basic realm=\""+Realm+"\"")
-			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
-		} else if status == aa.Passed {
+		if status == aa.Passed {
 			go log.Println("Authentication passed, user is", user)
 			r.Header.Set("X-Authenticated-User", user)
 			h.ServeHTTP(w, r)
+		} else if status == aa.NotAttempted {
+			go log.Println("Authentication not attempted, requesting it")
+			w.Header().Set("WWW-Authenticate", "Basic realm=\""+Realm+"\"")
+			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
 		} else {
 			go log.Println("Authentication failed")
 			http.Error(w, "403 Forbidden (authentication)", http.StatusForbidden)
