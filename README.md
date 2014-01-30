@@ -2,6 +2,7 @@ Elastic Guardian
 ================
 
 [![Build Status](https://travis-ci.org/alexaandru/elastic_guardian.png?branch=master)](https://travis-ci.org/alexaandru/elastic_guardian)
+[![GoDoc](https://godoc.org/github.com/alexaandru/elastic_guardian?status.png)](https://godoc.org/github.com/alexaandru/elastic_guardian)
 
 **Elastic Guardian** is a tiny reverse proxy that can offer authentication (using HTTP Basic Auth) as well as authorization.
 
