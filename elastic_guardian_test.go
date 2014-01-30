@@ -73,3 +73,18 @@ func assertPassesTestCase(t *testing.T, tc testCase) {
 		t.Error("Expected", expectedBody, "got", actualBody)
 	}
 }
+
+func TestCmdLineFlagDefaults(t *testing.T) {
+	processCmdLineFlags()
+	if BackendURL != "http://localhost:9200" {
+		t.Error("Failed to set BackendURL, got", BackendURL)
+	}
+
+	if FrontendURL != ":9600" {
+		t.Error("Failed to set FrontendURL, got", FrontendURL)
+	}
+
+	if Realm != "Elasticsearch" {
+		t.Error("Failed to set Realm, got", Realm)
+	}
+}
