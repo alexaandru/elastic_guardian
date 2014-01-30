@@ -13,6 +13,15 @@ import (
 	"strings"
 )
 
+// The possible statuses of authentication process
+const (
+	_ = iota
+	NotAttempted
+	NotBasic
+	Failed
+	Passed
+)
+
 // This is just a proof of concept. Not for production use!
 var poorMansCredentialStore = map[string]string{
 	"foo": "bar",
@@ -20,25 +29,29 @@ var poorMansCredentialStore = map[string]string{
 }
 
 // BasicAuthPassed verifies an authHeader to see if it passed HTTP Basic Auth.
-func BasicAuthPassed(authHeader string) (ok bool, user string) {
+func BasicAuthPassed(authHeader string) (status int, user string) {
 	if authHeader == "" {
-		return
+		return NotAttempted, user
 	}
 
 	tokens := strings.Split(authHeader, " ")
 	method, token := tokens[0], tokens[1]
 	if method != "Basic" {
-		return
+		return NotBasic, user
 	}
 
 	data, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
 		log.Println(err)
-		return
+		return Failed, user
 	}
 
 	tokens = strings.Split(string(data), ":")
 	user, pass := tokens[0], tokens[1]
 
-	return poorMansCredentialStore[user] == pass, user
+	if poorMansCredentialStore[user] == pass {
+		return Passed, user
+	} else {
+		return Failed, user
+	}
 }
