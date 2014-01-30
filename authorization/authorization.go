@@ -1,20 +1,21 @@
 /*
-	authorization implements a basic authorization "engine".
+Package authorization implements a basic authorization "engine".
 
-	It comes with a builtin, proof of concept, authorization rules
-	container/storage.
+It comes with a builtin, proof of concept, authorization rules container/storage.
 */
 package authorization
 
-// authorizationRules groups together authorization rules for one use.
-//
-// It is implemented as a combination of defaultRule and a list of
-// exception rules, as follows:
-//
-// 1. if defaultRule == true; then rules is used as a blacklisting mechanism;
-// 2. if defaultRule == false; then rules is used as a whitelisting mechanism.
-//
-// These combined allow for flexible and granular access control.
+/*
+authorizationRules groups together authorization rules for one use.
+
+It is implemented as a combination of defaultRule and a list of
+exception rules, as follows:
+
+1. if defaultRule == true; then rules is used as a blacklisting mechanism;
+2. if defaultRule == false; then rules is used as a whitelisting mechanism.
+
+These combined allow for flexible and granular access control.
+*/
 type authorizationRules struct {
 	defaultRule bool
 	rules       []string

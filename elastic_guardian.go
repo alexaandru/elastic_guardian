@@ -1,6 +1,15 @@
+/*
+Elastic Guardian implements a tiny reverse proxy that hopefully is easy to understand
+and extend.
+
+It currently offers:
+ - an authentication (using HTTP Basic Auth) layer;
+ - an authorization layer (based on the (user, HTTP verb, HTTP path) set).
+*/
 package main
 
 import (
+	"flag"
 	aa "github.com/alexaandru/elastic_guardian/authentication"
 	az "github.com/alexaandru/elastic_guardian/authorization"
 	"log"
@@ -10,11 +19,10 @@ import (
 )
 
 // BackendUrl points to the target of the reverse proxy.
-// TODO: Make it configurable (via command line flag?)
-const BackendURL = "http://localhost:9200"
+var BackendURL string
 
 // FrontendURL points to the URL the proxy will accept incoming requests on.
-const FrontendURL = ":9600"
+var FrontendURL string
 
 // wrapAuthentication wraps given h Handler with an authentication layer.
 func wrapAuthentication(h http.Handler) http.Handler {
@@ -44,6 +52,10 @@ func wrapAuthorization(h http.Handler) http.Handler {
 }
 
 func main() {
+	flag.StringVar(&BackendURL, "backend", "http://localhost:9200", "Backend URL (where to proxy requests to)")
+	flag.StringVar(&FrontendURL, "frontend", ":9600", "Frontend URL (where to expose the proxied backend)")
+	flag.Parse()
+
 	uri, err := url.Parse(BackendURL)
 	if err != nil {
 		log.Fatal(err)

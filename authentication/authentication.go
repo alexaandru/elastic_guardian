@@ -1,9 +1,9 @@
 /*
-	authentication implements a very minimal (and incomplete) HTTP Basic Auth
-	verification mechanism.
+Package authentication implements a very minimal (and incomplete) HTTP Basic Auth
+verification mechanism.
 
-	It includes a proof of concept of a credentials store, which should be taken
-	as it is - just a demo.
+It includes a proof of concept of a credentials store, which should be taken
+as it is - just a demo.
 */
 package authentication
 
