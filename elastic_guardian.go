@@ -18,7 +18,7 @@ import (
 	"net/url"
 )
 
-// BackendUrl points to the target of the reverse proxy.
+// BackendURL points to the target of the reverse proxy.
 var BackendURL string
 
 // FrontendURL points to the URL the proxy will accept incoming requests on.
@@ -51,23 +51,35 @@ func wrapAuthorization(h http.Handler) http.Handler {
 	})
 }
 
-func main() {
+// processCmdLineFlags processes the command line flags. If none given it will use the default
+// values:
+//
+//   backend: "http://localhost:9200"
+//   frontend: ":9600"
+func processCmdLineFlags() {
 	flag.StringVar(&BackendURL, "backend", "http://localhost:9200", "Backend URL (where to proxy requests to)")
 	flag.StringVar(&FrontendURL, "frontend", ":9600", "Frontend URL (where to expose the proxied backend)")
 	flag.Parse()
+}
+
+// initReverseProxy initializes the reverseProxy, including applying any handlers/wrappers around it.
+func initReverseProxy(uri *url.URL) (rp http.Handler) {
+	rp = httputil.NewSingleHostReverseProxy(uri)
+	rp = wrapAuthorization(rp)
+	rp = wrapAuthentication(rp)
+
+	return
+}
+
+func main() {
+	processCmdLineFlags()
 
 	uri, err := url.Parse(BackendURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var reverseProxy http.Handler
-	reverseProxy = httputil.NewSingleHostReverseProxy(uri)
-	reverseProxy = wrapAuthorization(reverseProxy)
-	reverseProxy = wrapAuthentication(reverseProxy)
-
-	http.Handle("/", reverseProxy)
-
+	http.Handle("/", initReverseProxy(uri))
 	if err = http.ListenAndServe(FrontendURL, nil); err != nil {
 		log.Fatal(err)
 	}

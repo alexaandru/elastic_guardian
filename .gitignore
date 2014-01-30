@@ -3,6 +3,7 @@
 *.a
 *.so
 *.test
+elastic_guardian
 
 # Folders
 _obj
@@ -19,5 +20,3 @@ _cgo_gotypes.go
 _cgo_export.*
 
 _testmain.go
-
-*.exe
