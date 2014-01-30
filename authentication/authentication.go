@@ -51,7 +51,6 @@ func BasicAuthPassed(authHeader string) (status int, user string) {
 
 	if poorMansCredentialStore[user] == pass {
 		return Passed, user
-	} else {
-		return Failed, user
 	}
+	return Failed, user
 }
