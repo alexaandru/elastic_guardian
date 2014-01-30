@@ -1,10 +1,17 @@
 /*
-Elastic Guardian implements a tiny reverse proxy that hopefully is easy to understand
-and extend.
+Elastic Guardian is a tiny reverse proxy that can offer authentication (using HTTP Basic Auth)
+as well as authorization.
+
+While it was originally meant as a thin layer between Elasticsearch (which has no builtin
+authentication/authorization) and the World, there is nothing specific to Elasticsearch (other
+than a few defaults which can be changed via command line flags).
+
+The generic use case for Elastic Guardian is to restrict access to a HTTP API with HTTP
+Basic Auth and authorization rules.
 
 It currently offers:
- - an authentication (using HTTP Basic Auth) layer;
- - an authorization layer (based on the (user, HTTP verb, HTTP path) set).
+	an authentication (using HTTP Basic Auth) layer;
+	an authorization layer (based on the (user, HTTP verb, HTTP path) set).
 */
 package main
 
@@ -64,6 +71,7 @@ func wrapAuthorization(h http.Handler) http.Handler {
 //
 //   backend: "http://localhost:9200"
 //   frontend: ":9600"
+//   realm: "Elasticsearch"
 func processCmdLineFlags() {
 	flag.StringVar(&BackendURL, "backend", "http://localhost:9200", "Backend URL (where to proxy requests to)")
 	flag.StringVar(&FrontendURL, "frontend", ":9600", "Frontend URL (where to expose the proxied backend)")
