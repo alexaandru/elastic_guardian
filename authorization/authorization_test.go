@@ -70,6 +70,20 @@ func TestAllowWithBlacklist(t *testing.T) {
 	}
 }
 
+func TestAuthorizationFailsWithEmptyUser(t *testing.T) {
+	if AuthorizationPassed("", "GET", "whatever") {
+		t.Error("Authorization should fail with empty user")
+	}
+}
+
+func TestAuthorizationFailsWithEmptyRules(t *testing.T) {
+	if AuthorizationPassed("bogus", "GET", "whatever") {
+		t.Error("Authorization should fail with empty rules for user")
+	}
+}
+
 func TestAuthorizationPassed(t *testing.T) {
-	t.SkipNow()
+	if !AuthorizationPassed("foo", "GET", "whatever") {
+		t.Error("Authorization should pass with correct user")
+	}
 }

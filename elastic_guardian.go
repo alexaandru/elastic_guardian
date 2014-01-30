@@ -25,6 +25,9 @@ import (
 	"net/url"
 )
 
+// handlerWrapper captures the signature of a http.Handler wrapper function.
+type handlerWrapper func(http.Handler) http.Handler
+
 // BackendURL points to the target of the reverse proxy.
 var BackendURL string
 
@@ -79,11 +82,12 @@ func processCmdLineFlags() {
 	flag.Parse()
 }
 
-// initReverseProxy initializes the reverseProxy, including applying any handlers/wrappers around it.
-func initReverseProxy(uri *url.URL) (rp http.Handler) {
+// initReverseProxy initializes the reverseProxy, including applying any handlers passed.
+func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler) {
 	rp = httputil.NewSingleHostReverseProxy(uri)
-	rp = wrapAuthorization(rp)
-	rp = wrapAuthentication(rp)
+	for _, handler := range handlers {
+		rp = handler(rp)
+	}
 
 	return
 }
@@ -96,7 +100,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.Handle("/", initReverseProxy(uri))
+	reverseProxy := initReverseProxy(uri, wrapAuthorization, wrapAuthentication)
+	http.Handle("/", reverseProxy)
 	if err = http.ListenAndServe(FrontendURL, nil); err != nil {
 		log.Fatal(err)
 	}
