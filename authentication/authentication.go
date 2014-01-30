@@ -35,12 +35,11 @@ func BasicAuthPassed(authHeader string) (status int, user string) {
 	}
 
 	tokens := strings.Split(authHeader, " ")
-	method, token := tokens[0], tokens[1]
-	if method != "Basic" {
+	if len(tokens) != 2 || tokens[0] != "Basic" {
 		return NotBasic, user
 	}
 
-	data, err := base64.StdEncoding.DecodeString(token)
+	data, err := base64.StdEncoding.DecodeString(tokens[1])
 	if err != nil {
 		log.Println(err)
 		return Failed, user
