@@ -10,8 +10,8 @@ The generic use case for Elastic Guardian is to restrict access to a HTTP API wi
 Basic Auth and authorization rules.
 
 It currently offers:
-	an authentication (using HTTP Basic Auth) layer;
-	an authorization layer (based on the (user, HTTP verb, HTTP path) set).
+	authentication (using HTTP Basic Auth);
+	authorization (based on the {user, HTTP verb, HTTP path}).
 */
 package main
 

@@ -1,5 +1,5 @@
 /*
-Package authentication implements a very minimal (and incomplete) HTTP Basic Auth
+Package authentication implements a very minimal HTTP Basic Auth header
 verification mechanism.
 
 It includes a proof of concept of a credentials store, which should be taken
