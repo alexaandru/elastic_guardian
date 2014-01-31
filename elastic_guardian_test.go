@@ -25,6 +25,7 @@ var testCases = map[string]testCase{
 	"fail_when_whitelisting_forbids":  {"/_cluster/stats", "Basic " + bazboo, "403 Forbidden (authorization)\n"},
 }
 
+// Test wrappers
 func TestShouldRequestAuthenticationIfBlank(t *testing.T) {
 	assertPassesTestCase(t, testCases["request_authentication_if_blank"])
 }
@@ -74,6 +75,7 @@ func assertPassesTestCase(t *testing.T, tc testCase) {
 	}
 }
 
+// Test command line
 func TestCmdLineFlagDefaults(t *testing.T) {
 	processCmdLineFlags()
 
@@ -91,5 +93,14 @@ func TestCmdLineFlagDefaults(t *testing.T) {
 
 	if Logpath != "./elastic_guardian.log" {
 		t.Error("Failed to set Logpath, got", Logpath)
+	}
+}
+
+// Test logging
+func TestLogpathInvalid(t *testing.T) {
+	_, err := redirectLogsToFile("what/a/bogus/path/this/is")
+
+	if err == nil {
+		t.Error("Should have returned error on invalid path")
 	}
 }

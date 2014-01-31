@@ -99,10 +99,10 @@ func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler
 }
 
 // redirectLogsToFile sets the output for logs to the given path.
-func redirectLogsToFile(path string) (f *os.File) {
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
+func redirectLogsToFile(path string) (f *os.File, err error) {
+	f, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
-		log.Fatalf("Error opening logfile: %v", err)
+		return
 	}
 
 	log.SetOutput(f)
@@ -118,8 +118,12 @@ func logPrint(r *http.Request, msg string) {
 
 func main() {
 	processCmdLineFlags()
-	f := redirectLogsToFile(Logpath)
-	defer f.Close()
+
+	if f, err := redirectLogsToFile(Logpath); err != nil {
+		log.Fatalf("Error opening logfile: %v", err)
+	} else {
+		defer f.Close()
+	}
 
 	uri, err := url.Parse(BackendURL)
 	if err != nil {
