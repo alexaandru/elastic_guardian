@@ -8,4 +8,4 @@ for i in "*.go" "authentication/*.go" "authorization/*.go"; do
 done
 
 # cleanup
-rm -f auth*/*.test
+rm -f auth*/*.test *.test

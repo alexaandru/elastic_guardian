@@ -17,12 +17,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	aa "github.com/alexaandru/elastic_guardian/authentication"
 	az "github.com/alexaandru/elastic_guardian/authorization"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"strings"
 )
 
 // handlerWrapper captures the signature of a http.Handler wrapper function.
@@ -37,20 +40,22 @@ var FrontendURL string
 // Realm holds the Basic Auth realm.
 var Realm string
 
+// Logpath holds the path to the logfile.
+var Logpath string
+
 // wrapAuthentication wraps given h Handler with an authentication layer.
 func wrapAuthentication(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		status, user := aa.BasicAuthPassed(r.Header.Get("Authorization"))
 		if status == aa.Passed {
-			go log.Println("Authentication passed, user is", user)
 			r.Header.Set("X-Authenticated-User", user)
 			h.ServeHTTP(w, r)
 		} else if status == aa.NotAttempted {
-			go log.Println("Authentication not attempted, requesting it")
+			go logPrint(r, "401 Unauthorized")
 			w.Header().Set("WWW-Authenticate", "Basic realm=\""+Realm+"\"")
 			http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
 		} else {
-			go log.Println("Authentication failed")
+			go logPrint(r, "403 Forbidden (authentication)")
 			http.Error(w, "403 Forbidden (authentication)", http.StatusForbidden)
 		}
 	})
@@ -60,10 +65,10 @@ func wrapAuthentication(h http.Handler) http.Handler {
 func wrapAuthorization(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if az.AuthorizationPassed(r.Header.Get("X-Authenticated-User"), r.Method, r.URL.Path) {
-			go log.Println("Authorization passed")
+			go logPrint(r, "200 OK")
 			h.ServeHTTP(w, r)
 		} else {
-			go log.Println("Authorization failed")
+			go logPrint(r, "403 Forbidden (authorization)")
 			http.Error(w, "403 Forbidden (authorization)", http.StatusForbidden)
 		}
 	})
@@ -79,6 +84,7 @@ func processCmdLineFlags() {
 	flag.StringVar(&BackendURL, "backend", "http://localhost:9200", "Backend URL (where to proxy requests to)")
 	flag.StringVar(&FrontendURL, "frontend", ":9600", "Frontend URL (where to expose the proxied backend)")
 	flag.StringVar(&Realm, "realm", "Elasticsearch", "HTTP Basic Auth realm")
+	flag.StringVar(&Logpath, "logpath", "./elastic_guardian.log", "Path to the logfile")
 	flag.Parse()
 }
 
@@ -92,8 +98,28 @@ func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler
 	return
 }
 
+// redirectLogsToFile sets the output for logs to the given path.
+func redirectLogsToFile(path string) (f *os.File) {
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
+	if err != nil {
+		log.Fatalf("Error opening logfile: %v", err)
+	}
+
+	log.SetOutput(f)
+
+	return
+}
+
+// logPrint is a shortcut to the log.Println, with the necessary formatting included.
+func logPrint(r *http.Request, msg string) {
+	tokens := strings.Split(r.RemoteAddr, ":")
+	log.Println(fmt.Sprintf("%s \"%s %s %s\" %s", tokens[0], r.Method, r.URL.Path, r.Proto, msg))
+}
+
 func main() {
 	processCmdLineFlags()
+	f := redirectLogsToFile(Logpath)
+	defer f.Close()
 
 	uri, err := url.Parse(BackendURL)
 	if err != nil {

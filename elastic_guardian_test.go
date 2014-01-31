@@ -76,6 +76,7 @@ func assertPassesTestCase(t *testing.T, tc testCase) {
 
 func TestCmdLineFlagDefaults(t *testing.T) {
 	processCmdLineFlags()
+
 	if BackendURL != "http://localhost:9200" {
 		t.Error("Failed to set BackendURL, got", BackendURL)
 	}
@@ -86,5 +87,9 @@ func TestCmdLineFlagDefaults(t *testing.T) {
 
 	if Realm != "Elasticsearch" {
 		t.Error("Failed to set Realm, got", Realm)
+	}
+
+	if Logpath != "./elastic_guardian.log" {
+		t.Error("Failed to set Logpath, got", Logpath)
 	}
 }
