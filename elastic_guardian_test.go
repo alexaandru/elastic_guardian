@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/base64"
+	aa "github.com/alexaandru/elastic_guardian/authentication"
+	az "github.com/alexaandru/elastic_guardian/authorization"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -23,6 +25,20 @@ var testCases = map[string]testCase{
 	"fail_when_blacklisting_forbids":  {"/_cluster/health", "Basic " + foobar, "403 Forbidden (authorization)\n"},
 	"pass_when_whitelisting_allows":   {"/_cluster/health", "Basic " + bazboo, ""},
 	"fail_when_whitelisting_forbids":  {"/_cluster/stats", "Basic " + bazboo, "403 Forbidden (authorization)\n"},
+}
+
+func loadCredentials() {
+	aa.LoadCredentials(aa.CredentialsStore{
+		"foo": aa.Hash("bar"),
+		"baz": aa.Hash("boo"),
+	})
+}
+
+func loadAuthorizations() {
+	az.LoadAuthorizations(az.AuthorizationStore{
+		"foo": az.AuthorizationRules{az.Allow, []string{"GET /_cluster/health"}},
+		"baz": az.AuthorizationRules{az.Deny, []string{"GET /_cluster/health"}},
+	})
 }
 
 // Test wrappers
@@ -51,6 +67,9 @@ func TestShouldFailWhenWhitelistingForbids(t *testing.T) {
 }
 
 func assertPassesTestCase(t *testing.T, tc testCase) {
+	loadCredentials()
+	loadAuthorizations()
+
 	uri, err := url.Parse("http://localhost:9000")
 	if err != nil {
 		t.Fail()
@@ -91,8 +110,8 @@ func TestCmdLineFlagDefaults(t *testing.T) {
 		t.Error("Failed to set Realm, got", Realm)
 	}
 
-	if Logpath != "./elastic_guardian.log" {
-		t.Error("Failed to set Logpath, got", Logpath)
+	if LogPath != "stdout" {
+		t.Error("Failed to set LogPath, got", LogPath)
 	}
 }
 

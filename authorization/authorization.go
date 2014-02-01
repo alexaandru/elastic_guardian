@@ -5,41 +5,87 @@ It comes with a builtin, proof of concept, authorization rules container/storage
 */
 package authorization
 
-/*
-authorizationRules groups together authorization rules for one use.
+import (
+	"errors"
+	"io"
+	"io/ioutil"
+	"strings"
+)
 
-It is implemented as a combination of defaultRule and a list of
+/*
+AuthorizationRules groups together authorization rules for one use.
+
+It is implemented as a combination of DefaultRule and a list of
 exception rules, as follows:
 
-1. if defaultRule == true; then rules is used as a blacklisting mechanism;
-2. if defaultRule == false; then rules is used as a whitelisting mechanism.
+1. if DefaultRule == true; then rules is used as a blacklisting mechanism;
+2. if DefaultRule == false; then rules is used as a whitelisting mechanism.
 
 These combined allow for flexible and granular access control.
 */
-type authorizationRules struct {
-	defaultRule bool
-	rules       []string
+type AuthorizationRules struct {
+	DefaultRule bool
+	Rules       []string
 }
+
+// AuthorizationStore implements a type for storing all authorization rules.
+type AuthorizationStore map[string]AuthorizationRules
 
 // Small shortcut constants, for clarity.
-const allow, deny = true, false
+const Allow, Deny = true, false
 
-// A proof of concept authorization rules container.
-// Not intended for production!
-var poorMansAuthorizationRules = map[string]authorizationRules{
-	"foo": authorizationRules{allow, []string{"GET /_cluster/health"}},
-	"baz": authorizationRules{deny, []string{"GET /_cluster/health"}},
+// holds the authorizations
+var authorizations AuthorizationStore
+
+// LoadAuthorizations loads the given authorizations into the library.
+func LoadAuthorizations(as AuthorizationStore) (err error) {
+	authorizations = as
+	return
 }
 
-// isEmpty determines if the given authorizationRules structure is empty.
-func (ar authorizationRules) isEmpty() bool {
-	return !ar.defaultRule && len(ar.rules) == 0
+// LoadAuthorizationsFromFile loads the authorizations from the given f io.Reader into the library.
+// The file must have the format:
+//
+// 		username:default_rule:rule1:...:ruleN
+func LoadAuthorizationsFromFile(f io.Reader) (err error) {
+	rawData, err := ioutil.ReadAll(f)
+	if err == nil {
+		lines, as := strings.Split(strings.Trim(string(rawData), "\n"), "\n"), AuthorizationStore{}
+		for _, line := range lines {
+			tokens := strings.Split(strings.Trim(line, " "), ":")
+			if len(tokens) < 2 {
+				return errors.New("Invalid authorization line: " + line)
+			}
+
+			user := tokens[0]
+
+			rule := false
+			if tokens[1] == "allow" {
+				rule = Allow
+			} else if tokens[1] == "deny" {
+				rule = Deny
+			} else {
+				return errors.New("Unknown default rule " + tokens[1])
+			}
+
+			as[user] = AuthorizationRules{rule, tokens[2:]}
+		}
+
+		return LoadAuthorizations(as)
+	}
+
+	return
+}
+
+// isEmpty determines if the given AuthorizationRules structure is empty.
+func (ar AuthorizationRules) isEmpty() bool {
+	return !ar.DefaultRule && len(ar.Rules) == 0
 }
 
 // hasRule determine if the given ar has a rule referring to verb + path.
-func (ar authorizationRules) hasRule(verb, path string) bool {
+func (ar AuthorizationRules) hasRule(verb, path string) bool {
 	cannonicalRule := verb + " " + path
-	for _, rule := range ar.rules {
+	for _, rule := range ar.Rules {
 		if rule == cannonicalRule {
 			return true
 		}
@@ -49,13 +95,13 @@ func (ar authorizationRules) hasRule(verb, path string) bool {
 }
 
 // hasNoRule see hasRule and negate that.
-func (ar authorizationRules) hasNoRule(verb, path string) bool {
+func (ar AuthorizationRules) hasNoRule(verb, path string) bool {
 	return !ar.hasRule(verb, path)
 }
 
 // Allows determines if a give verb + path combination is allowed by ar.
-func (ar authorizationRules) allows(verb, path string) bool {
-	if ar.defaultRule {
+func (ar AuthorizationRules) allows(verb, path string) bool {
+	if ar.DefaultRule {
 		return ar.hasNoRule(verb, path)
 	}
 
@@ -69,7 +115,7 @@ func AuthorizationPassed(user, verb, path string) bool {
 		return false
 	}
 
-	ar := poorMansAuthorizationRules[user]
+	ar := authorizations[user]
 	if ar.isEmpty() {
 		return false
 	}
