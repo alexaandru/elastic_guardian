@@ -20,6 +20,7 @@ import (
 	az "github.com/alexaandru/elastic_guardian/authorization"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 )
 
@@ -43,6 +44,16 @@ var CredentialsPath string
 
 // AuthorizationsPath holds the path to the authorizations file.
 var AuthorizationsPath string
+
+// initReverseProxy initializes the reverseProxy, including applying any handlers passed.
+func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler) {
+	rp = httputil.NewSingleHostReverseProxy(uri)
+	for _, handler := range handlers {
+		rp = handler(rp)
+	}
+
+	return
+}
 
 // wrapAuthentication wraps given h Handler with an authentication layer.
 func wrapAuthentication(h http.Handler) http.Handler {

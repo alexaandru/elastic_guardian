@@ -15,6 +15,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -40,6 +41,14 @@ func LoadCredentials(backend interface{}) (err error) {
 		credentials = v
 	case io.Reader:
 		err = LoadCredentialsFromReader(v)
+	case string:
+		f, e := os.Open(v)
+		if e != nil {
+			return e
+		}
+
+		LoadCredentials(f)
+
 	default:
 		err = errors.New("don't know how to handle backend")
 	}

@@ -7,33 +7,9 @@ import (
 	az "github.com/alexaandru/elastic_guardian/authorization"
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"strings"
 )
-
-// inlineCredentials defines credentials inline.
-var inlineCredentials = aa.CredentialsStore{
-	"foo": aa.Hash("bar"),
-	"baz": aa.Hash("boo"),
-}
-
-// inlineAuthorizations defines the authorization rules inline.
-var inlineAuthorizations = az.AuthorizationStore{
-	"foo": az.AuthorizationRules{az.Allow, []string{"GET /_cluster/health"}},
-	"baz": az.AuthorizationRules{az.Deny, []string{"GET /_cluster/health"}},
-}
-
-// initReverseProxy initializes the reverseProxy, including applying any handlers passed.
-func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler) {
-	rp = httputil.NewSingleHostReverseProxy(uri)
-	for _, handler := range handlers {
-		rp = handler(rp)
-	}
-
-	return
-}
 
 // processCmdLineFlags processes the command line flags. If none given it will use the default
 // values:
@@ -56,12 +32,7 @@ func initCredentials(cs aa.CredentialsStore, fname string) (err error) {
 		return aa.LoadCredentials(cs)
 	}
 
-	f, err := os.Open(fname)
-	if err != nil {
-		return
-	}
-
-	return aa.LoadCredentials(f)
+	return aa.LoadCredentials(fname)
 }
 
 func initAuthorizations(as az.AuthorizationStore, fname string) (err error) {
@@ -69,12 +40,7 @@ func initAuthorizations(as az.AuthorizationStore, fname string) (err error) {
 		return az.LoadAuthorizations(as)
 	}
 
-	f, err := os.Open(fname)
-	if err != nil {
-		return
-	}
-
-	return az.LoadAuthorizations(f)
+	return az.LoadAuthorizations(fname)
 }
 
 // redirectLogsToFile sets the output for logs to the given path.

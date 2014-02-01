@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -44,6 +45,13 @@ func LoadAuthorizations(backend interface{}) (err error) {
 		authorizations = v
 	case io.Reader:
 		err = LoadAuthorizationsFromReader(v)
+	case string:
+		f, e := os.Open(v)
+		if e != nil {
+			return e
+		}
+
+		LoadAuthorizations(f)
 	default:
 		err = errors.New("don't know how to handle backend")
 	}
