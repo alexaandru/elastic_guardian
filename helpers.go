@@ -21,7 +21,7 @@ func processCmdLineFlags() {
 	flag.StringVar(&BackendURL, "backend", "http://localhost:9200", "Backend URL (where to proxy requests to)")
 	flag.StringVar(&FrontendURL, "frontend", ":9600", "Frontend URL (where to expose the proxied backend)")
 	flag.StringVar(&Realm, "realm", "Elasticsearch", "HTTP Basic Auth realm")
-	flag.StringVar(&LogPath, "logpath", "stdout", "Path to the logfile")
+	flag.StringVar(&LogPath, "logpath", "", "Path to the logfile (if not set, will dump to stdout)")
 	flag.StringVar(&CredentialsPath, "cpath", "", "Path to the credentials file")
 	flag.StringVar(&AuthorizationsPath, "apath", "", "Path to the authorizations file")
 	flag.Parse()
@@ -45,6 +45,10 @@ func initAuthorizations(as az.AuthorizationStore, fname string) (err error) {
 
 // redirectLogsToFile sets the output for logs to the given path.
 func redirectLogsToFile(path string) (f *os.File, err error) {
+	if path == "" {
+		return
+	}
+
 	f, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
 		return

@@ -99,7 +99,7 @@ func main() {
 
 	if f, err := redirectLogsToFile(LogPath); err != nil {
 		log.Fatalf("Error opening logfile: %v", err)
-	} else {
+	} else if f != nil {
 		defer f.Close()
 	}
 
