@@ -10,6 +10,7 @@ package authentication
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,14 +34,25 @@ const (
 var credentials CredentialsStore
 
 // LoadCredentials loads the given credentials into the library.
-func LoadCredentials(cs CredentialsStore) (err error) {
-	credentials = cs
+func LoadCredentials(backend interface{}) (err error) {
+	switch v := backend.(type) {
+	case CredentialsStore:
+		credentials = v
+	case io.Reader:
+		err = LoadCredentialsFromReader(v)
+	default:
+		err = errors.New("don't know how to handle backend")
+	}
+
 	return
 }
 
-// LoadCredentialsFromFile loads the credentials from the given f io.Reader into the library.
-func LoadCredentialsFromFile(f io.Reader) (err error) {
-	rawData, err := ioutil.ReadAll(f)
+// LoadCredentialsFromReader loads the credentials from the given r io.Reader into the library.
+// The file must have the format:
+//
+// 		username:sha256_of_password
+func LoadCredentialsFromReader(r io.Reader) (err error) {
+	rawData, err := ioutil.ReadAll(r)
 	if err == nil {
 		lines, cs := strings.Split(strings.Trim(string(rawData), "\n"), "\n"), CredentialsStore{}
 		for _, line := range lines {

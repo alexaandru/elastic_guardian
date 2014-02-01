@@ -32,20 +32,20 @@ func TestLoadAuthorizationsFromFile(t *testing.T) {
 	}
 
 	reader := strings.NewReader("foo:allow:GET /_cluster/health\nbaz:deny:GET /_cluster/health\n")
-	LoadAuthorizationsFromFile(reader)
+	LoadAuthorizationsFromReader(reader)
 
 	if authorizations["foo"].isEmpty() {
 		t.Error("authorizations should have been loaded")
 	}
 
 	reader = strings.NewReader("foo:allow:GET /_cluster/health\nbaz\n")
-	err := LoadAuthorizationsFromFile(reader)
+	err := LoadAuthorizationsFromReader(reader)
 	if err.Error() != "Invalid authorization line: baz" {
 		t.Error("Should've errored out on baz line")
 	}
 
 	reader = strings.NewReader("foo:allow:GET /_cluster/health\nbaz:denyes:GET /_cluster/health\n")
-	err = LoadAuthorizationsFromFile(reader)
+	err = LoadAuthorizationsFromReader(reader)
 	if err.Error() != "Unknown default rule denyes" {
 		t.Error("Should've errored out on baz line")
 	}

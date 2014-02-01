@@ -13,6 +13,12 @@ import (
 	"strings"
 )
 
+// inlineCredentials defines credentials inline.
+var inlineCredentials = aa.CredentialsStore{
+	"foo": aa.Hash("bar"),
+	"baz": aa.Hash("boo"),
+}
+
 // inlineAuthorizations defines the authorization rules inline.
 var inlineAuthorizations = az.AuthorizationStore{
 	"foo": az.AuthorizationRules{az.Allow, []string{"GET /_cluster/health"}},
@@ -55,7 +61,7 @@ func initCredentials(cs aa.CredentialsStore, fname string) (err error) {
 		return
 	}
 
-	return aa.LoadCredentialsFromFile(f)
+	return aa.LoadCredentials(f)
 }
 
 func initAuthorizations(as az.AuthorizationStore, fname string) (err error) {
@@ -68,7 +74,7 @@ func initAuthorizations(as az.AuthorizationStore, fname string) (err error) {
 		return
 	}
 
-	return az.LoadAuthorizationsFromFile(f)
+	return az.LoadAuthorizations(f)
 }
 
 // redirectLogsToFile sets the output for logs to the given path.

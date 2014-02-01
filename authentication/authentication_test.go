@@ -35,7 +35,7 @@ func TestLoadCredentialsFromFile(t *testing.T) {
 	}
 
 	reader := strings.NewReader("foo:fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9\nbaz:6446d58d6dfafd58586d3ea85a53f4a6b3cc057f933a22bb58e188a74ac8f663\n")
-	err := LoadCredentialsFromFile(reader)
+	err := LoadCredentialsFromReader(reader)
 
 	if credentials["foo"] == "" {
 		t.Error("credentials should have been loaded")

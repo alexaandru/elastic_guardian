@@ -44,12 +44,6 @@ var CredentialsPath string
 // AuthorizationsPath holds the path to the authorizations file.
 var AuthorizationsPath string
 
-// inlineCredentials defines credentials inline.
-var inlineCredentials = aa.CredentialsStore{
-	"foo": aa.Hash("bar"),
-	"baz": aa.Hash("boo"),
-}
-
 // wrapAuthentication wraps given h Handler with an authentication layer.
 func wrapAuthentication(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

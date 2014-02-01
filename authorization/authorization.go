@@ -38,17 +38,25 @@ const Allow, Deny = true, false
 var authorizations AuthorizationStore
 
 // LoadAuthorizations loads the given authorizations into the library.
-func LoadAuthorizations(as AuthorizationStore) (err error) {
-	authorizations = as
+func LoadAuthorizations(backend interface{}) (err error) {
+	switch v := backend.(type) {
+	case AuthorizationStore:
+		authorizations = v
+	case io.Reader:
+		err = LoadAuthorizationsFromReader(v)
+	default:
+		err = errors.New("don't know how to handle backend")
+	}
+
 	return
 }
 
-// LoadAuthorizationsFromFile loads the authorizations from the given f io.Reader into the library.
+// LoadAuthorizationsFromReader loads the authorizations from the given r io.Reader into the library.
 // The file must have the format:
 //
 // 		username:default_rule:rule1:...:ruleN
-func LoadAuthorizationsFromFile(f io.Reader) (err error) {
-	rawData, err := ioutil.ReadAll(f)
+func LoadAuthorizationsFromReader(r io.Reader) (err error) {
+	rawData, err := ioutil.ReadAll(r)
 	if err == nil {
 		lines, as := strings.Split(strings.Trim(string(rawData), "\n"), "\n"), AuthorizationStore{}
 		for _, line := range lines {
