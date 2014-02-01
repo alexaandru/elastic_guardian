@@ -11,12 +11,8 @@ import (
 	"strings"
 )
 
-// processCmdLineFlags processes the command line flags. If none given it will use the default
-// values:
-//
-//   backend: "http://localhost:9200"
-//   frontend: ":9600"
-//   realm: "Elasticsearch"
+// processCmdLineFlags processes the command line flags.
+// If none given it will use the default values set below (3rd parameter).
 func processCmdLineFlags() {
 	flag.StringVar(&BackendURL, "backend", "http://localhost:9200", "Backend URL (where to proxy requests to)")
 	flag.StringVar(&FrontendURL, "frontend", ":9600", "Frontend URL (where to expose the proxied backend)")
@@ -43,7 +39,6 @@ func initAuthorizations(as az.AuthorizationStore, fname string) (err error) {
 	return az.LoadAuthorizations(fname)
 }
 
-// redirectLogsToFile sets the output for logs to the given path.
 func redirectLogsToFile(path string) (f *os.File, err error) {
 	if path == "" {
 		return
@@ -59,7 +54,6 @@ func redirectLogsToFile(path string) (f *os.File, err error) {
 	return
 }
 
-// logPrint is a shortcut to the log.Println, with the necessary formatting included.
 func logPrint(r *http.Request, msg string) {
 	tokens := strings.Split(r.RemoteAddr, ":")
 	log.Println(fmt.Sprintf("%s \"%s %s %s\" %s", tokens[0], r.Method, r.URL.Path, r.Proto, msg))

@@ -16,5 +16,4 @@ The generic use case for **Elastic Guardian** is to restrict access to a HTTP AP
 TODO
 ----
 
- 1. implement graceful shutdown;
- 2. improve docs (add examples where applicable, etc.).
+ 1. implement graceful shutdown.

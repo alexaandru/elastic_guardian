@@ -12,6 +12,18 @@ Basic Auth and authorization rules.
 It currently offers:
 	authentication (using HTTP Basic Auth);
 	authorization (based on the {user, HTTP verb, HTTP path}).
+
+It currently supports loading the authentication and authorization data from two different backends:
+	inline variables or
+	external files (filenames passed via commandline flags)
+
+Please see authentication and authorization packages for further details.
+
+Commandline help can be accessed with:
+	elastic_guardian -h
+
+That will also display the default values for all flags. Log output will go to console (stdout)
+by default.
 */
 package main
 
@@ -45,7 +57,6 @@ var CredentialsPath string
 // AuthorizationsPath holds the path to the authorizations file.
 var AuthorizationsPath string
 
-// initReverseProxy initializes the reverseProxy, including applying any handlers passed.
 func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler) {
 	rp = httputil.NewSingleHostReverseProxy(uri)
 	for _, handler := range handlers {
@@ -55,7 +66,6 @@ func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler
 	return
 }
 
-// wrapAuthentication wraps given h Handler with an authentication layer.
 func wrapAuthentication(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		status, user := aa.BasicAuthPassed(r.Header.Get("Authorization"))
@@ -73,7 +83,6 @@ func wrapAuthentication(h http.Handler) http.Handler {
 	})
 }
 
-// wrapAuthorization wraps given h Handler with an authorization layer.
 func wrapAuthorization(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if az.AuthorizationPassed(r.Header.Get("X-Authenticated-User"), r.Method, r.URL.Path) {

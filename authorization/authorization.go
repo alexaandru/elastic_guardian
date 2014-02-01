@@ -1,7 +1,17 @@
 /*
 Package authorization implements a basic authorization "engine".
 
-It comes with a builtin, proof of concept, authorization rules container/storage.
+Before it can operate it needs to load the authorization rules from a backend via
+LoadAuthorizations().
+
+Currently supported backends:
+
+	an AuthorizationStore variable directly
+	a Reader which can deliver data as specified in LoadAuthorizationsFromReader()
+
+After the authorizations are loaded the main functionality is available via AuthorizationPassed()
+which can report if a given combination of {user, http method, http path} passes the
+authorization rules currently loaded.
 */
 package authorization
 
@@ -14,13 +24,13 @@ import (
 )
 
 /*
-AuthorizationRules groups together authorization rules for one use.
+AuthorizationRules defines a container for the authorization rules for one user.
 
-It is implemented as a combination of DefaultRule and a list of
-exception rules, as follows:
+It is implemented as a combination of DefaultRule and a list of exception rules,
+as follows:
 
-1. if DefaultRule == true; then rules is used as a blacklisting mechanism;
-2. if DefaultRule == false; then rules is used as a whitelisting mechanism.
+1. if DefaultRule == Allow; then Rules becomes a blacklisting mechanism;
+2. if DefaultRule == Deny; then rules becomes a whitelisting mechanism.
 
 These combined allow for flexible and granular access control.
 */
@@ -29,13 +39,15 @@ type AuthorizationRules struct {
 	Rules       []string
 }
 
-// AuthorizationStore implements a type for storing all authorization rules.
+// AuthorizationStore defines a container for all authorization rules.
 type AuthorizationStore map[string]AuthorizationRules
 
 // Small shortcut constants, for clarity.
-const Allow, Deny = true, false
+const (
+	Allow = true
+	Deny  = false
+)
 
-// holds the authorizations
 var authorizations AuthorizationStore
 
 // LoadAuthorizations loads the given authorizations into the library.
@@ -124,8 +136,7 @@ func (ar AuthorizationRules) allows(verb, path string) bool {
 	return ar.hasRule(verb, path)
 }
 
-// AuthorizationPassed determines if a give user is authorized to access
-// path via verb.
+// AuthorizationPassed determines if a give user is authorized to access path via verb.
 func AuthorizationPassed(user, verb, path string) bool {
 	if user == "" {
 		return false

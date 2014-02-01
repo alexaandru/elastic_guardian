@@ -110,7 +110,7 @@ func TestCmdLineFlagDefaults(t *testing.T) {
 		t.Error("Failed to set Realm, got", Realm)
 	}
 
-	if LogPath != "stdout" {
+	if LogPath != "" {
 		t.Error("Failed to set LogPath, got", LogPath)
 	}
 }

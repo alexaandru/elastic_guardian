@@ -2,8 +2,16 @@
 Package authentication implements a very minimal HTTP Basic Auth header
 verification mechanism.
 
-It includes a proof of concept of a credentials store, which should be taken
-as it is - just a demo.
+Before it can operate it needs to load the credentials from a backend via
+LoadCredentials().
+
+Currently supported backends:
+
+	a CredentialsStore variable directly
+	a Reader which can deliver data as specified in LoadCredentialsFromReader()
+
+Once credentials are loaded the main functionality is available via BasicAuthPassed()
+which can report if a given Authorization header matches any of the loaded credentials.
 */
 package authentication
 
@@ -31,7 +39,6 @@ const (
 	Passed
 )
 
-// holds the actual credentials.
 var credentials CredentialsStore
 
 // LoadCredentials loads the given credentials into the library.
