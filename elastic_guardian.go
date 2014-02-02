@@ -14,8 +14,11 @@ It currently offers:
 	authorization (based on the {user, HTTP verb, HTTP path}).
 
 It currently supports loading the authentication and authorization data from two different backends:
-	inline variables or
+	inline variables (see settings.go) or
 	external files (filenames passed via commandline flags)
+
+Whether the external files are used or not can be controled (at compile time) via AllowAuthFromFiles
+constant. See that constant definition for further details.
 
 Please see authentication and authorization packages for further details.
 
@@ -28,13 +31,23 @@ by default.
 package main
 
 import (
+	"flag"
+	"fmt"
 	aa "github.com/alexaandru/elastic_guardian/authentication"
 	az "github.com/alexaandru/elastic_guardian/authorization"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"strings"
 )
+
+// AllowAuthFromFiles controls whether the files specified via command lien flags for
+// authentication and authorization will actually be used. Can be used to lock down
+// access to only the credentials stored at compile time (effectively disallow overriding
+// them at runtime). May come in handy in some scenarios.
+const AllowAuthFromFiles = true
 
 // handlerWrapper captures the signature of a http.Handler wrapper function.
 type handlerWrapper func(http.Handler) http.Handler
@@ -95,14 +108,48 @@ func wrapAuthorization(h http.Handler) http.Handler {
 	})
 }
 
+func processCmdLineFlags() {
+	flag.StringVar(&BackendURL, "backend", "http://localhost:9200", "Backend URL (where to proxy requests to)")
+	flag.StringVar(&FrontendURL, "frontend", ":9600", "Frontend URL (where to expose the proxied backend)")
+	flag.StringVar(&Realm, "realm", "Elasticsearch", "HTTP Basic Auth realm")
+	flag.StringVar(&LogPath, "logpath", "", "Path to the logfile (if not set, will dump to stdout)")
+	flag.StringVar(&CredentialsPath, "cpath", "", "Path to the credentials file")
+	flag.StringVar(&AuthorizationsPath, "apath", "", "Path to the authorizations file")
+	flag.Parse()
+}
+
+func redirectLogsToFile(path string) (f *os.File, err error) {
+	if path == "" {
+		return
+	}
+
+	f, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
+	if err != nil {
+		return
+	}
+
+	log.SetOutput(f)
+
+	return
+}
+
+func logPrint(r *http.Request, msg string) {
+	tokens := strings.Split(r.RemoteAddr, ":")
+	log.Println(fmt.Sprintf("%s \"%s %s %s\" %s", tokens[0], r.Method, r.URL.Path, r.Proto, msg))
+}
+
 func main() {
 	processCmdLineFlags()
 
-	if err := initCredentials(inlineCredentials, CredentialsPath); err != nil {
+	if !AllowAuthFromFiles || CredentialsPath == "" {
+		aa.LoadCredentials(inlineCredentials)
+	} else if err := aa.LoadCredentials(CredentialsPath); err != nil {
 		log.Fatal("Cannot open the credentials file:", err)
 	}
 
-	if err := initAuthorizations(inlineAuthorizations, AuthorizationsPath); err != nil {
+	if !AllowAuthFromFiles || AuthorizationsPath == "" {
+		az.LoadAuthorizations(inlineAuthorizations)
+	} else if err := az.LoadAuthorizations(AuthorizationsPath); err != nil {
 		log.Fatal("Cannot open the authorizations file:", err)
 	}
 
