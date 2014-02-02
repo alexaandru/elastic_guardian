@@ -39,6 +39,8 @@ const (
 	Passed
 )
 
+// this will hold the credentials once they are loaded, and they MUST be loaded
+// before any authentication checks are attempted.
 var credentials CredentialsStore
 
 // LoadCredentials loads the given credentials into the library.
@@ -48,14 +50,13 @@ func LoadCredentials(backend interface{}) (err error) {
 		credentials = v
 	case io.Reader:
 		err = LoadCredentialsFromReader(v)
-	case string:
+	case string: // assume filename
 		f, e := os.Open(v)
 		if e != nil {
 			return e
 		}
 
 		LoadCredentials(f)
-
 	default:
 		err = errors.New("don't know how to handle backend")
 	}

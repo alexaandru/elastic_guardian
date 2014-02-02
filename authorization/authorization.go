@@ -48,6 +48,8 @@ const (
 	Deny  = false
 )
 
+// this will hold the authorization rules once they are loaded, and they MUST be
+// loaded before any authorization checks are performed.
 var authorizations AuthorizationStore
 
 // LoadAuthorizations loads the given authorizations into the library.
@@ -57,7 +59,7 @@ func LoadAuthorizations(backend interface{}) (err error) {
 		authorizations = v
 	case io.Reader:
 		err = LoadAuthorizationsFromReader(v)
-	case string:
+	case string: // assume filename
 		f, e := os.Open(v)
 		if e != nil {
 			return e
@@ -85,9 +87,7 @@ func LoadAuthorizationsFromReader(r io.Reader) (err error) {
 				return errors.New("Invalid authorization line: " + line)
 			}
 
-			user := tokens[0]
-
-			rule := false
+			user, rule := tokens[0], false
 			if tokens[1] == "allow" {
 				rule = Allow
 			} else if tokens[1] == "deny" {
