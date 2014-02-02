@@ -40,6 +40,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -139,6 +140,8 @@ func logPrint(r *http.Request, msg string) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	processCmdLineFlags()
 
 	if !AllowAuthFromFiles || CredentialsPath == "" {
