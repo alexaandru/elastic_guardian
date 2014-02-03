@@ -1,9 +1,17 @@
 package authorization
 
 import (
+	"errors"
+	"os"
 	"strings"
 	"testing"
 )
+
+type NastyReader struct{}
+
+func (nr NastyReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("won't happen")
+}
 
 func loadAuthorizations() {
 	LoadAuthorizations(AuthorizationStore{
@@ -12,7 +20,8 @@ func loadAuthorizations() {
 	})
 }
 
-func TestLoadAuthorizations(t *testing.T) {
+// Test loading authorizations
+func TestLoadAuthorizationsFromVar(t *testing.T) {
 	authorizations = AuthorizationStore{}
 	if !authorizations["foo"].isEmpty() {
 		t.Error("authorizations var should start empty")
@@ -22,10 +31,61 @@ func TestLoadAuthorizations(t *testing.T) {
 	if authorizations["foo"].isEmpty() {
 		t.Error("authorizations should have been loaded")
 	}
-
 }
 
-func TestLoadAuthorizationsFromFile(t *testing.T) {
+func TestLoadAuthorizationsFromString(t *testing.T) {
+	authorizations = AuthorizationStore{}
+	if !authorizations["foo"].isEmpty() {
+		t.Error("authorizations var should start empty")
+	}
+
+	LoadAuthorizations("authorization_test.txt")
+	if authorizations["foo"].isEmpty() {
+		t.Error("authorizations should have been loaded")
+	}
+}
+
+func TestLoadAuthorizationsFromWrongString(t *testing.T) {
+	authorizations = AuthorizationStore{}
+	if !authorizations["foo"].isEmpty() {
+		t.Error("authorizations var should start empty")
+	}
+
+	err := LoadAuthorizations("authorization_test.xxx")
+	if err == nil {
+		t.Error("Loading authorizations from invlid filename should error out")
+	}
+}
+
+func TestLoadAuthorizationsFromReaderWrapper(t *testing.T) {
+	authorizations = AuthorizationStore{}
+	if !authorizations["foo"].isEmpty() {
+		t.Error("authorizations var should start empty")
+	}
+
+	if f, e := os.Open("authorization_test.txt"); e == nil {
+		LoadAuthorizations(f)
+		if authorizations["foo"].isEmpty() {
+			t.Error("authorizations should have been loaded")
+		}
+	} else {
+		t.Error("Failed to open authorizations file for testing")
+	}
+}
+
+func TestLoadAuthorizationsFromBadInterface(t *testing.T) {
+	authorizations = AuthorizationStore{}
+	if !authorizations["foo"].isEmpty() {
+		t.Error("authorizations var should start empty")
+	}
+
+	err := LoadAuthorizations(42)
+	if err == nil {
+		t.Error("Loading authorizations from int should've errored out")
+	}
+}
+
+func TestLoadAuthorizationsFromReader(t *testing.T) {
 	authorizations = AuthorizationStore{}
 	if !authorizations["foo"].isEmpty() {
 		t.Error("authorizations var should start empty")
@@ -51,6 +111,19 @@ func TestLoadAuthorizationsFromFile(t *testing.T) {
 	}
 }
 
+func TestLoadAuthorizationsFromNastyReader(t *testing.T) {
+	authorizations = AuthorizationStore{}
+	if !authorizations["foo"].isEmpty() {
+		t.Error("authorizations var should start empty")
+	}
+
+	err := LoadAuthorizationsFromReader(NastyReader{})
+	if err == nil {
+		t.Error("Loading authorizations from a reader that errors out should error out")
+	}
+}
+
+// Test AuthorizationRules methods
 func TestIsEmpty(t *testing.T) {
 	loadAuthorizations()
 	ar := AuthorizationRules{}
@@ -124,6 +197,7 @@ func TestAllowWithBlacklist(t *testing.T) {
 	}
 }
 
+// Test AuthorizationPassed
 func TestAuthorizationFailsWithEmptyUser(t *testing.T) {
 	loadAuthorizations()
 	if AuthorizationPassed("", "GET", "whatever") {

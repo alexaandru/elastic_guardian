@@ -1,0 +1,2 @@
+foo:allow:GET /_cluster/health
+baz:deny:GET /_cluster/health

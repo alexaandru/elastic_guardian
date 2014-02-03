@@ -2,9 +2,17 @@ package authentication
 
 import (
 	"encoding/base64"
+	"errors"
+	"os"
 	"strings"
 	"testing"
 )
+
+type NastyReader struct{}
+
+func (nr NastyReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("won't happen")
+}
 
 var foobar, foobogus = base64.StdEncoding.EncodeToString([]byte("foo:bar")),
 	base64.StdEncoding.EncodeToString([]byte("foo:bogus"))
@@ -16,7 +24,8 @@ func loadCredentials() {
 	})
 }
 
-func TestLoadCredentials(t *testing.T) {
+// Test loading credentials
+func TestLoadCredentialsFromVar(t *testing.T) {
 	credentials = CredentialsStore{}
 	if credentials["foo"] != "" {
 		t.Error("credentials should be empty")
@@ -28,7 +37,59 @@ func TestLoadCredentials(t *testing.T) {
 	}
 }
 
-func TestLoadCredentialsFromFile(t *testing.T) {
+func TestLoadCredentialsFromString(t *testing.T) {
+	credentials = CredentialsStore{}
+	if credentials["foo"] != "" {
+		t.Error("credentials should be empty")
+	}
+
+	LoadCredentials("authentication_test.txt")
+	if credentials["foo"] == "" {
+		t.Error("credentials should have been loaded")
+	}
+}
+
+func TestLoadCredentialsFromWrongString(t *testing.T) {
+	credentials = CredentialsStore{}
+	if credentials["foo"] != "" {
+		t.Error("credentials should be empty")
+	}
+
+	err := LoadCredentials("authentication_test.xxx")
+	if err == nil {
+		t.Error("Loading credentials from invlid filename should error out")
+	}
+}
+
+func TestLoadCredentialsFromReaderWrapper(t *testing.T) {
+	credentials = CredentialsStore{}
+	if credentials["foo"] != "" {
+		t.Error("credentials should be empty")
+	}
+
+	if f, e := os.Open("authentication_test.txt"); e == nil {
+		LoadCredentials(f)
+		if credentials["foo"] == "" {
+			t.Error("credentials should have been loaded")
+		}
+	} else {
+		t.Error("Failed to open credentials file for testing")
+	}
+}
+
+func TestLoadCredentialsFromBadInterface(t *testing.T) {
+	credentials = CredentialsStore{}
+	if credentials["foo"] != "" {
+		t.Error("credentials should be empty")
+	}
+
+	err := LoadCredentials(42)
+	if err == nil {
+		t.Error("Loading credentials from int should've errored out")
+	}
+}
+
+func TestLoadCredentialsFromReader(t *testing.T) {
 	credentials = CredentialsStore{}
 	if credentials["foo"] != "" {
 		t.Error("credentials should be empty")
@@ -46,6 +107,27 @@ func TestLoadCredentialsFromFile(t *testing.T) {
 	}
 }
 
+func TestLoadCredentialsFromNastyReader(t *testing.T) {
+	credentials = CredentialsStore{}
+	if credentials["foo"] != "" {
+		t.Error("credentials should be empty")
+	}
+
+	err := LoadCredentialsFromReader(NastyReader{})
+	if err == nil {
+		t.Error("Loading credentials from a reader that errors out should error out")
+	}
+}
+
+// Test Hash
+func TestHash(t *testing.T) {
+	expectedHash := "af2bdbe1aa9b6ec1e2ade1d694f41fc71a831d0268e9891562113d8a62add1bf"
+	if actualHash := Hash("sample"); expectedHash != actualHash {
+		t.Errorf("Hashing failed: expected %s got %s", expectedHash, actualHash)
+	}
+}
+
+// Test BasicAuthPassed
 func TestShouldFailIfAuthHeaderEmpty(t *testing.T) {
 	loadCredentials()
 	if status, _ := BasicAuthPassed(""); status != NotAttempted {
