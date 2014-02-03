@@ -139,37 +139,46 @@ func logPrint(r *http.Request, msg string) {
 	log.Println(fmt.Sprintf("%s \"%s %s %s\" %s", tokens[0], r.Method, r.URL.Path, r.Proto, msg))
 }
 
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+func setup() (uri *url.URL, f *os.File) {
+	var err error
 
-	processCmdLineFlags()
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	if !AllowAuthFromFiles || CredentialsPath == "" {
 		aa.LoadCredentials(inlineCredentials)
-	} else if err := aa.LoadCredentials(CredentialsPath); err != nil {
+	} else if err = aa.LoadCredentials(CredentialsPath); err != nil {
 		log.Fatal("Cannot open the credentials file:", err)
 	}
 
 	if !AllowAuthFromFiles || AuthorizationsPath == "" {
 		az.LoadAuthorizations(inlineAuthorizations)
-	} else if err := az.LoadAuthorizations(AuthorizationsPath); err != nil {
+	} else if err = az.LoadAuthorizations(AuthorizationsPath); err != nil {
 		log.Fatal("Cannot open the authorizations file:", err)
 	}
 
-	if f, err := redirectLogsToFile(LogPath); err != nil {
-		log.Fatalf("Error opening logfile: %v", err)
-	} else if f != nil {
-		defer f.Close()
-	}
-
-	uri, err := url.Parse(BackendURL)
+	uri, err = url.Parse(BackendURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	if f, err = redirectLogsToFile(LogPath); err != nil {
+		log.Fatalf("Error opening logfile: %v", err)
+	}
+
+	return
+}
+
+func main() {
+	processCmdLineFlags()
+
+	uri, f := setup()
+	if f != nil {
+		defer f.Close()
+	}
+
 	reverseProxy := initReverseProxy(uri, wrapAuthorization, wrapAuthentication)
 	http.Handle("/", reverseProxy)
-	if err = http.ListenAndServe(FrontendURL, nil); err != nil {
+	if err := http.ListenAndServe(FrontendURL, nil); err != nil {
 		log.Fatal(err)
 	}
 }

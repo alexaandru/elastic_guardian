@@ -116,10 +116,62 @@ func TestCmdLineFlagDefaults(t *testing.T) {
 }
 
 // Test logging
+func TestLogpathEmpty(t *testing.T) {
+	f, err := redirectLogsToFile("")
+
+	if f != nil {
+		t.Error("Should have NOT returned a file pointer on empty path")
+	}
+	if err != nil {
+		t.Error("Should have NOT returned an error on empty path")
+	}
+}
+
 func TestLogpathInvalid(t *testing.T) {
 	_, err := redirectLogsToFile("what/a/bogus/path/this/is")
 
 	if err == nil {
 		t.Error("Should have returned error on invalid path")
+	}
+}
+
+func TestLogpathValid(t *testing.T) {
+	f, err := redirectLogsToFile("test.test")
+
+	if f == nil {
+		t.Error("Should have returned a file pointer on valid path")
+	}
+	if err != nil {
+		t.Error("Should NOT have returned error on valid path")
+	}
+}
+
+// Test setup
+func TestSetupInline(t *testing.T) {
+	CredentialsPath, AuthorizationsPath, LogPath = "", "", ""
+
+	uri, f := setup()
+	if f != nil {
+		defer f.Close()
+		t.Error("Log should not be redirected when logpath empty")
+	}
+
+	if uri == nil {
+		t.Error("Uri should not be nil")
+	}
+}
+
+func TestSetupWithFilePaths(t *testing.T) {
+	CredentialsPath, AuthorizationsPath, LogPath = "authentication/authentication_test.txt", "authorization/authorization_test.txt", "test.test"
+
+	uri, f := setup()
+	if f != nil {
+		defer f.Close()
+	} else {
+		t.Error("Log should be redirected to file when logpath NOT empty")
+	}
+
+	if uri == nil {
+		t.Error("Uri should not be nil")
 	}
 }
