@@ -139,41 +139,39 @@ func logPrint(r *http.Request, msg string) {
 	log.Println(fmt.Sprintf("%s \"%s %s %s\" %s", tokens[0], r.Method, r.URL.Path, r.Proto, msg))
 }
 
-func setup() (uri *url.URL, f *os.File) {
-	var err error
-
+func setup() (uri *url.URL, f *os.File, err error) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	if !AllowAuthFromFiles || CredentialsPath == "" {
 		aa.LoadCredentials(inlineCredentials)
 	} else if err = aa.LoadCredentials(CredentialsPath); err != nil {
-		log.Fatal("Cannot open the credentials file:", err)
+		return
 	}
 
 	if !AllowAuthFromFiles || AuthorizationsPath == "" {
 		az.LoadAuthorizations(inlineAuthorizations)
 	} else if err = az.LoadAuthorizations(AuthorizationsPath); err != nil {
-		log.Fatal("Cannot open the authorizations file:", err)
+		return
 	}
 
 	uri, err = url.Parse(BackendURL)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
-	if f, err = redirectLogsToFile(LogPath); err != nil {
-		log.Fatalf("Error opening logfile: %v", err)
-	}
-
+	f, err = redirectLogsToFile(LogPath)
 	return
 }
 
 func main() {
 	processCmdLineFlags()
 
-	uri, f := setup()
+	uri, f, err := setup()
 	if f != nil {
 		defer f.Close()
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	reverseProxy := initReverseProxy(uri, wrapAuthorization, wrapAuthentication)

@@ -97,21 +97,18 @@ func assertPassesTestCase(t *testing.T, tc testCase) {
 // Test command line
 func TestCmdLineFlagDefaults(t *testing.T) {
 	processCmdLineFlags()
-
-	if BackendURL != "http://localhost:9200" {
-		t.Error("Failed to set BackendURL, got", BackendURL)
+	assertions := []([]string){
+		{"BackendURL", BackendURL, "http://localhost:9200"},
+		{"FrontendURL", FrontendURL, ":9600"},
+		{"Realm", Realm, "Elasticsearch"},
+		{"LogPath", LogPath, ""},
 	}
 
-	if FrontendURL != ":9600" {
-		t.Error("Failed to set FrontendURL, got", FrontendURL)
-	}
-
-	if Realm != "Elasticsearch" {
-		t.Error("Failed to set Realm, got", Realm)
-	}
-
-	if LogPath != "" {
-		t.Error("Failed to set LogPath, got", LogPath)
+	for _, row := range assertions {
+		label, actual, expected := row[0], row[1], row[2]
+		if actual != expected {
+			t.Errorf("Failed to set %s: expected %s got %s", label, expected, actual)
+		}
 	}
 }
 
@@ -150,7 +147,7 @@ func TestLogpathValid(t *testing.T) {
 func TestSetupInline(t *testing.T) {
 	CredentialsPath, AuthorizationsPath, LogPath = "", "", ""
 
-	uri, f := setup()
+	uri, f, err := setup()
 	if f != nil {
 		defer f.Close()
 		t.Error("Log should not be redirected when logpath empty")
@@ -159,12 +156,16 @@ func TestSetupInline(t *testing.T) {
 	if uri == nil {
 		t.Error("Uri should not be nil")
 	}
+
+	if err != nil {
+		t.Error("Error should be nil")
+	}
 }
 
-func TestSetupWithFilePaths(t *testing.T) {
+func TestSetupWithCorrectFilePaths(t *testing.T) {
 	CredentialsPath, AuthorizationsPath, LogPath = "authentication/authentication_test.txt", "authorization/authorization_test.txt", "test.test"
 
-	uri, f := setup()
+	uri, f, err := setup()
 	if f != nil {
 		defer f.Close()
 	} else {
@@ -173,5 +174,75 @@ func TestSetupWithFilePaths(t *testing.T) {
 
 	if uri == nil {
 		t.Error("Uri should not be nil")
+	}
+
+	if err != nil {
+		t.Error("Error should be nil")
+	}
+}
+
+func TestSetupWithIncorrectAuthenticationFilePath(t *testing.T) {
+	CredentialsPath, AuthorizationsPath, LogPath = "authentication/bogus/authentication_test.txt", "authorization/authorization_test.txt", "test.test"
+
+	_, f, err := setup()
+	if f != nil {
+		defer f.Close()
+	}
+
+	expected := "open authentication/bogus/authentication_test.txt: no such file or directory"
+	if err == nil {
+		t.Error("Error should NOT be nil")
+	} else if err.Error() != expected {
+		t.Errorf("Expected %s error got %v", expected, err)
+	}
+}
+
+func TestSetupWithIncorrectAuthorizationFilePath(t *testing.T) {
+	CredentialsPath, AuthorizationsPath, LogPath = "authentication/authentication_test.txt", "authorization/bogus/authorization_test.txt", "test.test"
+
+	_, f, err := setup()
+	if f != nil {
+		defer f.Close()
+	}
+
+	expected := "open authorization/bogus/authorization_test.txt: no such file or directory"
+	if err == nil {
+		t.Error("Error should NOT be nil")
+	} else if err.Error() != expected {
+		t.Errorf("Expected %s error got %v", expected, err)
+	}
+}
+
+func TestSetupWithIncorrectURI(t *testing.T) {
+	CredentialsPath, AuthorizationsPath, LogPath = "", "", ""
+
+	BackendURL = "%BOGUS"
+	_, f, err := setup()
+	if f != nil {
+		defer f.Close()
+	}
+	BackendURL = ""
+
+	expected := "parse %BOGUS: invalid URL escape \"%BO\""
+	if err == nil {
+		t.Error("Error should NOT be nil")
+	} else if err.Error() != expected {
+		t.Errorf("Expected %s error got %v", expected, err)
+	}
+}
+
+func TestSetupWithIncorrectLogPath(t *testing.T) {
+	CredentialsPath, AuthorizationsPath, LogPath = "", "", "bogus/bogus"
+
+	_, f, err := setup()
+	if f != nil {
+		defer f.Close()
+	}
+
+	expected := "open bogus/bogus: no such file or directory"
+	if err == nil {
+		t.Error("Error should NOT be nil")
+	} else if err.Error() != expected {
+		t.Errorf("Expected %s error got %v", expected, err)
 	}
 }
