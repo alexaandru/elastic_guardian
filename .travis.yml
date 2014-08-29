@@ -1,6 +1,6 @@
 language: go
 go:
   - 1.2
-script: "./test.sh"
+script: "go test -cover ./..."
 install:
   - go get code.google.com/p/go.tools/cmd/cover
