@@ -171,7 +171,7 @@ func TestHasNoRule(t *testing.T) {
 
 func TestAllowWithWhitelist(t *testing.T) {
 	loadAuthorizations()
-	ar := AuthorizationRules{Deny, []string{"GET /foobar"}}
+	ar := AuthorizationRules{Deny, []string{"GET /foobar$"}}
 
 	// Should deny EVERYTHING except defined rules
 	if !ar.allows("GET", "/foobar") {
@@ -181,11 +181,30 @@ func TestAllowWithWhitelist(t *testing.T) {
 	if ar.allows("GET", "/foobars") {
 		t.Error("allows() should NOT allow GET /foobars")
 	}
+
+	// Now use a more relaxed pattern.
+	ar = AuthorizationRules{Deny, []string{"GET /foobar(s|z)?$"}}
+
+	if !ar.allows("GET", "/foobar") {
+		t.Error("allows() should allow GET /foobar")
+	}
+
+	if !ar.allows("GET", "/foobars") {
+		t.Error("allows() should allow GET /foobars")
+	}
+
+	if !ar.allows("GET", "/foobarz") {
+		t.Error("allows() should allow GET /foobarz")
+	}
+
+	if ar.allows("GET", "/foobarss") {
+		t.Error("allows() should NOT allow GET /foobarss")
+	}
 }
 
 func TestAllowWithBlacklist(t *testing.T) {
 	loadAuthorizations()
-	ar := AuthorizationRules{Allow, []string{"GET /foobar"}}
+	ar := AuthorizationRules{Allow, []string{"GET /foobar$"}}
 
 	// Should allow EVERYTHING except defined rules
 	if ar.allows("GET", "/foobar") {
@@ -194,6 +213,21 @@ func TestAllowWithBlacklist(t *testing.T) {
 
 	if !ar.allows("GET", "/foobars") {
 		t.Error("allows() should allow GET /foobars")
+	}
+
+	ar = AuthorizationRules{Allow, []string{"GET /foobar"}}
+
+	// Should allow EVERYTHING except defined rules
+	if ar.allows("GET", "/foobar") {
+		t.Error("allows() should NOT allow GET /foobar")
+	}
+
+	if ar.allows("GET", "/foobar/baz") {
+		t.Error("allows() should NOT allow GET /foobar/baz")
+	}
+
+	if !ar.allows("GET", "/fooba") {
+		t.Error("allows() should allow GET /fooba")
 	}
 }
 

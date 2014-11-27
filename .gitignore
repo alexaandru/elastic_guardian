@@ -4,6 +4,7 @@
 *.so
 *.test
 *.log
+*.sw?
 elastic_guardian
 
 # Folders

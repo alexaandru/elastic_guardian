@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -111,10 +112,11 @@ func (ar AuthorizationRules) isEmpty() bool {
 }
 
 // hasRule determine if the given ar has a rule referring to verb + path.
+// TODO: bubble up the error all the way to exported func!
 func (ar AuthorizationRules) hasRule(verb, path string) bool {
-	cannonicalRule := verb + " " + path
+	cannonicalPath := verb + " " + path
 	for _, rule := range ar.Rules {
-		if rule == cannonicalRule {
+		if matched, _ := regexp.MatchString(rule, cannonicalPath); matched {
 			return true
 		}
 	}
