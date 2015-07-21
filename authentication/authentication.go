@@ -17,12 +17,11 @@ package authentication
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -93,27 +92,20 @@ func Hash(str string) (hash string) {
 }
 
 // BasicAuthPassed verifies an authHeader to see if it passed HTTP Basic Auth.
-func BasicAuthPassed(authHeader string) (status int, user string) {
-	if authHeader == "" {
-		return NotAttempted, user
+func BasicAuthPassed(r *http.Request) (status int, user string) {
+	usr, pass, _ := r.BasicAuth()
+	if usr == "" && r.URL != nil && r.URL.User != nil {
+		usr = r.URL.User.Username()
+		pass, _ = r.URL.User.Password()
 	}
 
-	tokens := strings.Split(authHeader, " ")
-	if len(tokens) != 2 || tokens[0] != "Basic" {
-		return NotBasic, user
+	if usr == "" {
+		return NotAttempted, ""
 	}
 
-	data, err := base64.StdEncoding.DecodeString(tokens[1])
-	if err != nil {
-		log.Println(err)
-		return Failed, user
+	if credentials[usr] == Hash(pass) {
+		return Passed, usr
 	}
 
-	tokens = strings.Split(string(data), ":")
-	user, pass := tokens[0], Hash(tokens[1])
-
-	if credentials[user] == pass {
-		return Passed, user
-	}
-	return Failed, user
+	return Failed, usr
 }

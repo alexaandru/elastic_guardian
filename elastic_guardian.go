@@ -82,7 +82,7 @@ func initReverseProxy(uri *url.URL, handlers ...handlerWrapper) (rp http.Handler
 
 func wrapAuthentication(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		status, user := aa.BasicAuthPassed(r.Header.Get("Authorization"))
+		status, user := aa.BasicAuthPassed(r)
 		if status == aa.Passed {
 			r.Header.Set("X-Authenticated-User", user)
 			h.ServeHTTP(w, r)

@@ -36,8 +36,8 @@ func loadCredentials() {
 
 func loadAuthorizations() {
 	az.LoadAuthorizations(az.AuthorizationStore{
-		"foo": az.AuthorizationRules{az.Allow, []string{"GET /_cluster/health"}},
-		"baz": az.AuthorizationRules{az.Deny, []string{"GET /_cluster/health"}},
+		"foo": az.AuthorizationRules{DefaultRule: az.Allow, Rules: []string{"GET /_cluster/health"}},
+		"baz": az.AuthorizationRules{DefaultRule: az.Deny, Rules: []string{"GET /_cluster/health"}},
 	})
 }
 

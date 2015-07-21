@@ -3,6 +3,8 @@ package authentication
 import (
 	"encoding/base64"
 	"errors"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -130,35 +132,69 @@ func TestHash(t *testing.T) {
 // Test BasicAuthPassed
 func TestShouldFailIfAuthHeaderEmpty(t *testing.T) {
 	loadCredentials()
-	if status, _ := BasicAuthPassed(""); status != NotAttempted {
-		t.Error("BasicAuthPassed() should be false with empty header")
+	req := mockReq("Basic ", "", t)
+	if status, _ := BasicAuthPassed(req); status != NotAttempted {
+		t.Error("BasicAuthPassed() should fail with", NotAttempted, "got", status)
 	}
 }
 
-func TestShouldFailIfNotBasicAuth(t *testing.T) {
+func TestShouldFailIfNonDecodableHeader(t *testing.T) {
 	loadCredentials()
-	if status, _ := BasicAuthPassed("Basicx foo"); status != NotBasic {
-		t.Error("BasicAuthPassed() should be false with non Basic header")
+	req := mockReq("Basic garbage", "", t)
+	if status, _ := BasicAuthPassed(req); status != NotAttempted {
+		t.Error("BasicAuthPassed() should fail with", NotAttempted, "got", status)
 	}
 }
 
-func TestShouldFailIfNonDecodable(t *testing.T) {
+func TestShouldFailWithIncorrectPasswordInHeader(t *testing.T) {
 	loadCredentials()
-	if status, _ := BasicAuthPassed("Basic garbageHere"); status != Failed {
-		t.Error("BasicAuthPassed() should be false with non Base64 data")
+	req := mockReq("Basic "+foobogus, "", t)
+	if status, _ := BasicAuthPassed(req); status != Failed {
+		t.Error("BasicAuthPassed() should fail with", Failed, "got", status)
 	}
 }
 
-func TestShouldFailWithIncorrectPassword(t *testing.T) {
+func TestShouldPassWithCorrectHeader(t *testing.T) {
 	loadCredentials()
-	if status, _ := BasicAuthPassed("Basic " + foobogus); status != Failed {
-		t.Error("BasicAuthPassed() should be false with incorrect password")
+	req := mockReq("Basic "+foobar, "", t)
+	if status, u := BasicAuthPassed(req); status != Passed {
+		t.Error("BasicAuthPassed() should succeed, got", status)
+	} else if u != "foo" {
+		t.Error("Expected user foo, got", u)
 	}
 }
 
-func TestShouldPass(t *testing.T) {
+func TestShouldFailWithBadPasswordInURL(t *testing.T) {
 	loadCredentials()
-	if status, _ := BasicAuthPassed("Basic " + foobar); status != Passed {
-		t.Error("BasicAuthPassed() should be true with correct password")
+	req := mockReq("", "https://foo:bogus@example.com", t)
+	if status, _ := BasicAuthPassed(req); status != Failed {
+		t.Error("BasicAuthPassed() should fail with", Failed, "got", status)
 	}
+}
+func TestShouldPassWithCorrectPasswordInURL(t *testing.T) {
+	loadCredentials()
+	req := mockReq("", "https://foo:bar@example.com", t)
+	if status, u := BasicAuthPassed(req); status != Passed {
+		t.Error("BasicAuthPassed() should succeed, got", status)
+	} else if u != "foo" {
+		t.Error("Expected user foo, got", u)
+	}
+}
+
+// helpers
+
+func mockReq(hdr, uri string, t *testing.T) *http.Request {
+	var err error
+	req := http.Request{Header: http.Header{}}
+	if hdr != "" {
+		req.Header.Add("Authorization", hdr)
+	}
+	if uri != "" {
+		req.URL, err = url.Parse(uri)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	return &req
 }
