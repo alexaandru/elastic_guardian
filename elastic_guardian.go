@@ -44,7 +44,7 @@ import (
 	"strings"
 )
 
-// AllowAuthFromFiles controls whether the files specified via command lien flags for
+// AllowAuthFromFiles controls whether the files specified via command line flags for
 // authentication and authorization will actually be used. Can be used to lock down
 // access to only the credentials stored at compile time (effectively disallow overriding
 // them at runtime). May come in handy in some scenarios.
